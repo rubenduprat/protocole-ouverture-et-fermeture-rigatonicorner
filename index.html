@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist Fermeture Bar</title>
+    <title>Checklist plop</title>
     <style>
         :root { --primary: #2c3e50; --success: #27ae60; --whatsapp: #25D366; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -55,7 +55,7 @@
             const data = await resp.json();
             
             configData = data.config;
-            document.getElementById('titre-bar').innerText = "Fermeture " + configData.nomBar;
+            document.getElementById('titre-bar').innerText = configData.nomBar;
             
             let html = "";
             data.checklist.forEach(section => {
@@ -109,3 +109,4 @@
 </script>
 </body>
 </html>
+
