@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Fermeture Bar</title>
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --whatsapp: #25D366; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .progress-container { position: sticky; top: 0; background: white; padding: 10px 0; z-index: 100; border-bottom: 2px solid #eee; }
+        .progress-bar { width: 100%; height: 15px; background: #eee; border-radius: 10px; margin-top: 5px; }
+        #progress-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; border-radius: 10px; }
+        h2 { background: var(--primary); color: white; padding: 10px; font-size: 1rem; border-radius: 5px; margin-top: 20px; }
+        .task-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .done { text-decoration: line-through; color: #95a5a6; opacity: 0.6; }
+        input[type="checkbox"] { width: 22px; height: 22px; margin-right: 12px; }
+        textarea { width: 100%; height: 80px; margin-top: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-group { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; }
+        .btn-whatsapp { background: var(--whatsapp); }
+        .btn-reset { background: #95a5a6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="progress-container">
+        <strong>Progression : <span id="stat-perc">0%</span></strong>
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+
+    <h1 id="titre-bar">Fermeture Bar</h1>
+
+    <div id="checklist-content">Chargement...</div>
+
+    <textarea id="notes" placeholder="Notes ou incidents..."></textarea>
+
+    <div class="btn-group">
+        <button class="btn-whatsapp" onclick="sendWhatsApp()">🟢 ENVOYER SUR WHATSAPP</button>
+        <button class="btn-reset" onclick="resetForm()">🔄 RESET</button>
+    </div>
+</div>
+
+<script>
+    let configData = { telephone: "33600000000", nomBar: "Bar" };
+    let checkboxes = [];
+    const checklistContent = document.getElementById('checklist-content');
+    const notes = document.getElementById('notes');
+
+    // CHARGEMENT
+    async function init() {
+        try {
+            const resp = await fetch('tasks.json');
+            const data = await resp.json();
+            
+            configData = data.config;
+            document.getElementById('titre-bar').innerText = "Fermeture " + configData.nomBar;
+            
+            let html = "";
+            data.checklist.forEach(section => {
+                html += `<h2>${section.categorie}</h2>`;
+                section.items.forEach(task => {
+                    html += `<label class="task-item"><input type="checkbox" data-task="${task}"> ${task}</label>`;
+                });
+            });
+            checklistContent.innerHTML = html;
+            checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            // Restore LocalStorage
+            checkboxes.forEach((cb, i) => {
+                if (localStorage.getItem('task-' + i) === 'true') cb.checked = true;
+                cb.addEventListener('change', () => {
+                    localStorage.setItem('task-' + i, cb.checked);
+                    updateProgress();
+                });
+            });
+            notes.value = localStorage.getItem('bar-notes') || "";
+            updateProgress();
+        } catch (e) {
+            checklistContent.innerHTML = "Erreur de chargement JSON.";
+        }
+    }
+
+    function updateProgress() {
+        const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const progress = checkboxes.length ? Math.round((checked / checkboxes.length) * 100) : 0;
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('stat-perc').innerText = progress + '%';
+        checkboxes.forEach(cb => cb.parentElement.classList.toggle('done', cb.checked));
+    }
+
+    function sendWhatsApp() {
+        let taskList = "";
+        checkboxes.forEach(cb => {
+            taskList += (cb.checked ? "✅ " : "❌ ") + cb.getAttribute('data-task') + "\n";
+        });
+
+        const message = `*🏁 RAPPORT ${configData.nomBar}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}`;
+        window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function resetForm() {
+        if(confirm("Réinitialiser ?")) { localStorage.clear(); location.reload(); }
+    }
+
+    notes.addEventListener('input', () => localStorage.setItem('bar-notes', notes.value));
+    init();
+</script>
+</body>
+</html>
