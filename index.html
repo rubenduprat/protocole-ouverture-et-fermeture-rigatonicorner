@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist Fermeture Bar</title>
+    <title>Checklist Fermeture</title>
     <style>
         :root { --primary: #2c3e50; --success: #27ae60; --whatsapp: #25D366; --bg: #f4f7f6; --dark-grey: #34495e; --warning: #e67e22; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -11,23 +11,20 @@
         .progress-container { position: sticky; top: 0; background: white; padding: 10px 0; z-index: 100; border-bottom: 2px solid #eee; }
         .progress-bar { width: 100%; height: 15px; background: #eee; border-radius: 10px; margin-top: 5px; }
         #progress-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; border-radius: 10px; }
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; }
         h2 { background: var(--primary); color: white; padding: 10px; font-size: 1rem; border-radius: 5px; margin-top: 20px; }
         .task-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .done { text-decoration: line-through; color: #95a5a6; opacity: 0.6; }
         input[type="checkbox"] { width: 22px; height: 22px; margin-right: 12px; }
         textarea { width: 100%; height: 80px; margin-top: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-family: inherit; }
-        
-        /* Section Photo */
         .photo-section { margin-top: 20px; padding: 15px; border: 2px dashed #ccc; border-radius: 8px; text-align: center; }
-        .btn-photo { background: var(--dark-grey); margin-bottom: 10px; }
+        .btn-photo { background: var(--dark-grey); margin-bottom: 10px; color: white; font-weight: bold; }
         #photo-preview { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 2px solid var(--success); display: none; }
         #instruction-photo { display:none; font-size: 0.85rem; color: var(--warning); margin-top: 10px; text-align: center; border: 1px solid var(--warning); padding: 10px; border-radius: 5px; }
-
         .btn-group { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-        button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; width: 100%; transition: opacity 0.2s; }
-        button:active { opacity: 0.8; }
-        .btn-whatsapp { background: var(--whatsapp); }
-        .btn-reset { background: #95a5a6; }
+        button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: opacity 0.2s; }
+        .btn-whatsapp { background: var(--whatsapp); color: white; }
+        .btn-reset { background: #95a5a6; color: white; }
     </style>
 </head>
 <body>
@@ -38,14 +35,14 @@
         <div class="progress-bar"><div id="progress-fill"></div></div>
     </div>
 
-    <h1 id="titre-bar">Chargement...</h1>
+    <h1 id="titre-page">Chargement...</h1>
 
     <div id="checklist-content">Chargement des tâches...</div>
 
-    <textarea id="notes" placeholder="Notes ou incidents (ex: stock, casse...)"></textarea>
+    <textarea id="notes" placeholder="Notes ou incidents..."></textarea>
 
     <div class="photo-section">
-        <label style="display: block; margin-bottom: 10px; font-weight: bold;">📸 Preuve visuelle (optionnel)</label>
+        <label style="display: block; margin-bottom: 10px; font-weight: bold;">📸 Preuve visuelle</label>
         <input type="file" id="photo-upload" accept="image/*" capture="environment" style="display: none;">
         <button type="button" class="btn-photo" onclick="document.getElementById('photo-upload').click()">📷 PRENDRE UNE PHOTO</button>
         <img id="photo-preview" src="" alt="Aperçu">
@@ -54,15 +51,13 @@
 
     <div class="btn-group">
         <button class="btn-whatsapp" onclick="sendWhatsApp()">🟢 ENVOYER SUR WHATSAPP</button>
-        <p id="instruction-photo">
-            💡 <strong>Rappel :</strong> Une fois sur WhatsApp, envoyez le texte, puis utilisez l'icône trombone pour joindre votre photo.
-        </p>
+        <p id="instruction-photo">💡 <strong>Rappel :</strong> Envoyez d'abord le texte sur WhatsApp, puis joignez la photo avec l'icône trombone 📎.</p>
         <button class="btn-reset" onclick="resetForm()">🔄 RÉINITIALISER</button>
     </div>
 </div>
 
 <script>
-    let configData = { telephone: "33600000000", nomBar: "Bar" };
+    let configData = {};
     let checkboxes = [];
     let hasPhoto = false;
 
@@ -77,9 +72,10 @@
         try {
             const resp = await fetch('tasks.json');
             const data = await resp.json();
-            
             configData = data.config;
-            document.getElementById('titre-bar').innerText = "Fermeture " + configData.nomBar;
+
+            // MISE À JOUR DU TITRE VIA JSON
+            document.getElementById('titre-page').innerText = configData.titrePage || "Fermeture " + configData.nomBar;
             
             let html = "";
             data.checklist.forEach(section => {
@@ -101,7 +97,7 @@
             notes.value = localStorage.getItem('bar-notes') || "";
             updateProgress();
         } catch (e) {
-            checklistContent.innerHTML = "Erreur : Fichier 'tasks.json' manquant.";
+            checklistContent.innerHTML = "Erreur de chargement JSON.";
         }
     }
 
@@ -113,11 +109,9 @@
         checkboxes.forEach(cb => cb.parentElement.classList.toggle('done', cb.checked));
     }
 
-    // LOGIQUE DE COMPRESSION D'IMAGE
     photoUpload.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = event => {
@@ -127,20 +121,14 @@
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000; 
                 const scaleSize = MAX_WIDTH / img.width;
-                
                 canvas.width = MAX_WIDTH;
                 canvas.height = img.height * scaleSize;
-
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Compression JPEG à 70%
-                const compressedUrl = canvas.toDataURL('image/jpeg', 0.7);
-                
-                photoPreview.src = compressedUrl;
+                photoPreview.src = canvas.toDataURL('image/jpeg', 0.7);
                 photoPreview.style.display = 'block';
                 photoStatus.style.display = 'block';
-                instructionPhoto.style.display = 'block'; // Affiche le rappel visuel
+                instructionPhoto.style.display = 'block';
                 hasPhoto = true;
             };
         };
@@ -151,23 +139,14 @@
         checkboxes.forEach(cb => {
             taskList += (cb.checked ? "✅ " : "❌ ") + cb.getAttribute('data-task') + "\n";
         });
-
-        const photoMsg = hasPhoto ? "\n🖼️ *PHOTO :* Jointe (à envoyer via le trombone)" : "\n⚠️ *PHOTO :* Aucune photo";
+        const photoMsg = hasPhoto ? "\n🖼️ *PHOTO :* Jointe (via trombone)" : "\n⚠️ *PHOTO :* Aucune photo";
         const message = `*🏁 RAPPORT ${configData.nomBar}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}${photoMsg}`;
-        
-        // Alerte d'instruction si une photo existe
-        if (hasPhoto) {
-            alert("ℹ️ RAPPEL PHOTO :\n\nWhatsApp va s'ouvrir avec le texte.\n\nN'OUBLIEZ PAS de joindre la photo en cliquant sur l'icône trombone 📎 (ou le +) dans WhatsApp !");
-        }
-
+        if (hasPhoto) alert("N'oubliez pas de joindre la photo avec le trombone 📎 sur WhatsApp !");
         window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
     function resetForm() {
-        if(confirm("Réinitialiser toutes les données ?")) { 
-            localStorage.clear(); 
-            location.reload(); 
-        }
+        if(confirm("Réinitialiser ?")) { localStorage.clear(); location.reload(); }
     }
 
     notes.addEventListener('input', () => localStorage.setItem('bar-notes', notes.value));
