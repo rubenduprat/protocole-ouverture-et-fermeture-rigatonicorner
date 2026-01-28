@@ -1,7 +1,7 @@
 {
     "config": {
         "telephone": "33789745946",
-        "tache": "fermeture BAR"
+        "nomBar": "Fermeture BAR"
     },
     "checklist": [
         {
@@ -17,5 +17,4 @@
             "items": ["Filtres nettoyés", "Bouteilles essuyées", "Réappro Pailles"]
         }
     ]
-
 }
