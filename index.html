@@ -96,7 +96,7 @@
             taskList += (cb.checked ? "✅ " : "❌ ") + cb.getAttribute('data-task') + "\n";
         });
 
-        const message = `*🏁 RAPPORT ${configData.tache}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}`;
+        const message = `*🏁 RAPPORT ${configData.nomBar}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}`;
         window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
@@ -108,6 +108,4 @@
     init();
 </script>
 </body>
-
 </html>
-
