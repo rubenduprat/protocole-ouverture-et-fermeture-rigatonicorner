@@ -52,7 +52,7 @@
     <div class="btn-group">
         <button class="btn-whatsapp" onclick="sendWhatsApp()">🟢 ENVOYER SUR WHATSAPP</button>
         <p id="instruction-photo">💡 <strong>Rappel :</strong> Envoyez d'abord le texte sur WhatsApp, puis joignez la photo avec l'icône trombone 📎.</p>
-        <button class="btn-reset" onclick="resetForm()">🔄 RÉINITIALISER</button>
+        <button class="btn-reset" onclick="resetForm()">🔄 RÉINITIALISER / NOUVEAU SERVICE</button>
     </div>
 </div>
 
@@ -74,7 +74,6 @@
             const data = await resp.json();
             configData = data.config;
 
-            // MISE À JOUR DU TITRE VIA JSON
             document.getElementById('titre-page').innerText = configData.titrePage || "Fermeture " + configData.nomBar;
             
             let html = "";
@@ -85,16 +84,18 @@
                 });
             });
             checklistContent.innerHTML = html;
-            checkboxes = document.querySelectorAll('input[type="checkbox"]');
             
-            checkboxes.forEach((cb, i) => {
-                if (localStorage.getItem('task-' + i) === 'true') cb.checked = true;
+            // Initialisation propre : on ne récupère plus les données du localStorage au démarrage
+            checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach((cb) => {
                 cb.addEventListener('change', () => {
-                    localStorage.setItem('task-' + i, cb.checked);
                     updateProgress();
+                    // Plus de sauvegarde localStorage.setItem ici
                 });
             });
-            notes.value = localStorage.getItem('bar-notes') || "";
+
+            // On s'assure que le champ notes est vide au chargement
+            notes.value = "";
             updateProgress();
         } catch (e) {
             checklistContent.innerHTML = "Erreur de chargement JSON.";
@@ -145,13 +146,16 @@
         window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
+    // Cette fonction sert maintenant à vider explicitement la mémoire et rafraîchir pour un nouveau service
     function resetForm() {
-        if(confirm("Réinitialiser ?")) { localStorage.clear(); location.reload(); }
+        if(confirm("Voulez-vous réinitialiser la liste pour un nouveau service ?")) { 
+            localStorage.clear(); 
+            location.reload(); 
+        }
     }
 
-    notes.addEventListener('input', () => localStorage.setItem('bar-notes', notes.value));
+    // Suppression de l'écouteur "input" sur les notes pour bloquer la sauvegarde automatique
     init();
 </script>
 </body>
 </html>
-
