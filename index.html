@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checklist Fermeture Bar</title>
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --whatsapp: #25D366; --bg: #f4f7f6; --dark-grey: #34495e; }
+        :root { --primary: #2c3e50; --success: #27ae60; --whatsapp: #25D366; --bg: #f4f7f6; --dark-grey: #34495e; --warning: #e67e22; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
         .progress-container { position: sticky; top: 0; background: white; padding: 10px 0; z-index: 100; border-bottom: 2px solid #eee; }
@@ -21,6 +21,7 @@
         .photo-section { margin-top: 20px; padding: 15px; border: 2px dashed #ccc; border-radius: 8px; text-align: center; }
         .btn-photo { background: var(--dark-grey); margin-bottom: 10px; }
         #photo-preview { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 2px solid var(--success); display: none; }
+        #instruction-photo { display:none; font-size: 0.85rem; color: var(--warning); margin-top: 10px; text-align: center; border: 1px solid var(--warning); padding: 10px; border-radius: 5px; }
 
         .btn-group { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; width: 100%; transition: opacity 0.2s; }
@@ -41,18 +42,21 @@
 
     <div id="checklist-content">Chargement des tâches...</div>
 
-    <textarea id="notes" placeholder="Notes ou incidents (ex: ampoule grillée, stock faible...)"></textarea>
+    <textarea id="notes" placeholder="Notes ou incidents (ex: stock, casse...)"></textarea>
 
     <div class="photo-section">
         <label style="display: block; margin-bottom: 10px; font-weight: bold;">📸 Preuve visuelle (optionnel)</label>
         <input type="file" id="photo-upload" accept="image/*" capture="environment" style="display: none;">
         <button type="button" class="btn-photo" onclick="document.getElementById('photo-upload').click()">📷 PRENDRE UNE PHOTO</button>
         <img id="photo-preview" src="" alt="Aperçu">
-        <p id="photo-status" style="display:none; color: var(--success); font-weight: bold; font-size: 0.9rem; margin-top: 5px;">✅ Photo compressée et prête</p>
+        <p id="photo-status" style="display:none; color: var(--success); font-weight: bold; font-size: 0.9rem; margin-top: 5px;">✅ Photo compressée prête</p>
     </div>
 
     <div class="btn-group">
         <button class="btn-whatsapp" onclick="sendWhatsApp()">🟢 ENVOYER SUR WHATSAPP</button>
+        <p id="instruction-photo">
+            💡 <strong>Rappel :</strong> Une fois sur WhatsApp, envoyez le texte, puis utilisez l'icône trombone pour joindre votre photo.
+        </p>
         <button class="btn-reset" onclick="resetForm()">🔄 RÉINITIALISER</button>
     </div>
 </div>
@@ -60,13 +64,14 @@
 <script>
     let configData = { telephone: "33600000000", nomBar: "Bar" };
     let checkboxes = [];
-    let hasPhoto = false; // Flag pour savoir si une photo est prête
+    let hasPhoto = false;
 
     const checklistContent = document.getElementById('checklist-content');
     const notes = document.getElementById('notes');
     const photoUpload = document.getElementById('photo-upload');
     const photoPreview = document.getElementById('photo-preview');
     const photoStatus = document.getElementById('photo-status');
+    const instructionPhoto = document.getElementById('instruction-photo');
 
     async function init() {
         try {
@@ -108,7 +113,7 @@
         checkboxes.forEach(cb => cb.parentElement.classList.toggle('done', cb.checked));
     }
 
-    // --- FONCTION DE COMPRESSION ---
+    // LOGIQUE DE COMPRESSION D'IMAGE
     photoUpload.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -120,7 +125,7 @@
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1000; // Largeur max pour la compression
+                const MAX_WIDTH = 1000; 
                 const scaleSize = MAX_WIDTH / img.width;
                 
                 canvas.width = MAX_WIDTH;
@@ -129,39 +134,37 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // Exportation en JPG qualité 0.7 (70%)
+                // Compression JPEG à 70%
                 const compressedUrl = canvas.toDataURL('image/jpeg', 0.7);
                 
                 photoPreview.src = compressedUrl;
                 photoPreview.style.display = 'block';
                 photoStatus.style.display = 'block';
+                instructionPhoto.style.display = 'block'; // Affiche le rappel visuel
                 hasPhoto = true;
             };
         };
     });
 
     function sendWhatsApp() {
-    let taskList = "";
-    checkboxes.forEach(cb => {
-        taskList += (cb.checked ? "✅ " : "❌ ") + cb.getAttribute('data-task') + "\n";
-    });
+        let taskList = "";
+        checkboxes.forEach(cb => {
+            taskList += (cb.checked ? "✅ " : "❌ ") + cb.getAttribute('data-task') + "\n";
+        });
 
-    const photoMsg = hasPhoto ? "\n🖼️ *PHOTO :* Jointe (à envoyer via le trombone)" : "\n⚠️ *PHOTO :* Aucune photo prise";
-    const message = `*🏁 RAPPORT ${configData.nomBar}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}${photoMsg}`;
-    
-    // Si une photo est présente, on affiche une instruction claire
-    if (hasPhoto) {
-        alert("ℹ️ INSTRUCTION :\n\nWhatsApp va s'ouvrir. \n1. Le texte du rapport sera déjà prêt.\n2. N'OUBLIEZ PAS de cliquer sur le '+' ou le 'Trombone' dans WhatsApp pour joindre la photo que vous venez de prendre !");
+        const photoMsg = hasPhoto ? "\n🖼️ *PHOTO :* Jointe (à envoyer via le trombone)" : "\n⚠️ *PHOTO :* Aucune photo";
+        const message = `*🏁 RAPPORT ${configData.nomBar}*\n\n${taskList}\n*📝 NOTES :* ${notes.value || "RAS"}${photoMsg}`;
+        
+        // Alerte d'instruction si une photo existe
+        if (hasPhoto) {
+            alert("ℹ️ RAPPEL PHOTO :\n\nWhatsApp va s'ouvrir avec le texte.\n\nN'OUBLIEZ PAS de joindre la photo en cliquant sur l'icône trombone 📎 (ou le +) dans WhatsApp !");
+        }
+
+        window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
-    // Ouvrir WhatsApp
-    window.open(`https://wa.me/${configData.telephone}?text=${encodeURIComponent(message)}`, '_blank');
-}
-
-
-
     function resetForm() {
-        if(confirm("Réinitialiser tout ?")) { 
+        if(confirm("Réinitialiser toutes les données ?")) { 
             localStorage.clear(); 
             location.reload(); 
         }
@@ -172,3 +175,4 @@
 </script>
 </body>
 </html>
+
